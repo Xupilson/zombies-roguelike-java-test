@@ -201,7 +201,7 @@ public class GameEngine {
                     System.out.println("Munição: " + player.getMunicao());
                     System.out.println("Renascimentos: " + player.getRenascimentos());
                     System.out.println("Bonus de Dano: " + player.getBonusDano());
-                    System.out.println("Dano FInal: " + (player.getArma().getDano() + player.getBonusDano()));
+                    System.out.println("Dano Final: " + (player.getArma().getDano() + player.getBonusDano()));
                     System.out.println("Round Atual: " + round);
                     break;
 
