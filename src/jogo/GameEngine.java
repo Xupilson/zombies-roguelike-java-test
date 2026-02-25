@@ -25,6 +25,16 @@ public class GameEngine {
 
             int zumbis = round * 2;
             System.out.println("Zumbis nesta rodada: " + zumbis);
+            int zumbisVida = 1 + (round / 5);
+            System.out.println("Vida dos zumbis normais: " + zumbisVida);            
+
+            // A cada 10 Rounds vai ter Boss
+            if (round % 10 == 0) {
+                Boss boss = new Boss("ABOMINAÇÃO", 30, 5);
+                lutarContraBoss(boss);
+                if (!player.estaVivo()) break;
+            }
+
 
             // A cada 3 rounds: especial
             if (round % 3 == 0) {
@@ -90,24 +100,34 @@ public class GameEngine {
         Power escolhido = (escolha == 1) ? opcao1 : opcao2;
         escolhido.aplicar(player);
 
-        System.out.println("Você escolhou" + escolhido.getNome());
+        System.out.println("Você escolheu " + escolhido.getNome());
     }
 
     private void lutarContraZumbis(int zumbis) {
         int danoFinal = player.getArma().getDano() + player.getBonusDano();
+        int vidaZumbi = 1 + (round / 5); // +1 de vida a cada 5 rounds
 
         for (int i = 1; i <= zumbis; i++) {
             System.out.println("Zumbi " + i + " apareceu!");
 
             if (player.temMunicao()) {
-                int zumbisMortos = Math.min(danoFinal, zumbis - i + 1);
+                int zumbisMortos = danoFinal / vidaZumbi;
+                
+                zumbisMortos = Math.max(1, zumbisMortos);
+
+                zumbisMortos = Math.min(zumbisMortos, zumbis - i + 1);
                 i += zumbisMortos - 1;
 
-                player.gastarBala(1);
+                player.gastarBala();
                 System.out.println("Você matou " + zumbisMortos + " zumbis! Balas: " + player.getMunicao());
             } else {
-                player.tomarDano(1);
-                System.out.println("Sem munição! Você foi atacado! Vida: " + player.getVida());
+                int danoZumbi = 1 + (round / 4);
+                int danoTomado = player.tomarDano(danoZumbi);
+
+                // Mata 1 zumbi na faca
+                int mortosMelee = 1;
+                System.out.println("Sem munição! Você foi atacado (-" + danoTomado + ") Vida: " + player.getVida());
+                System.out.println("Você matou " + mortosMelee + " zumbi na FACA");
             }
 
             if (!player.estaVivo()) {
@@ -126,6 +146,44 @@ public class GameEngine {
         }
     }
 
+    private void lutarContraBoss(Boss boss){
+        int vidaBoss = boss.calcularVida(round);
+        int danoBoss = boss.calcularDano(vidaBoss);
+        int danoFinal = player.getArma().getDano() + player.getBonusDano();
+
+        System.out.println("\n BOSS APARECEU: " + boss.getNome());
+        System.out.println("Vida: " + vidaBoss + " | Dano: " + danoBoss);
+
+        while (vidaBoss > 0 && player.estaVivo()) {
+            if (player.temMunicao()) {
+                player.gastarBala();
+                vidaBoss -= danoFinal;
+                vidaBoss = Math.max(0, vidaBoss);
+
+                System.out.println("Você acertou o boss (-" + danoFinal + ")");
+                System.out.println("Vida do Boss: " + vidaBoss + " | Balas: " + player.getMunicao());
+            } else {
+                player.tomarDano(danoBoss);
+                System.out.println("Sem Munição, o Boss te atacou (-" + danoBoss + ")");
+                System.out.println("Vida: " + player.getVida());
+            }
+
+            if (!player.estaVivo()) {
+                if (player.tentarRenascer()) {
+                    System.out.println("Você Morreu, porém ganhou outra chance");
+                } else {
+                    System.out.println("Você foi Derrotado pelo Boss!");
+                    return;
+                }
+            }
+
+            System.out.println();
+        }
+     
+        System.out.println("BOSS DERROTADO!");
+
+    }
+
     private ZombieSpecial sortearEspecial() {
         ZombieSpecial[] tipos = ZombieSpecial.values();
         return tipos[rng.nextInt(tipos.length)];
@@ -141,15 +199,32 @@ public class GameEngine {
 
         while (vidaEspecial > 0 && player.estaVivo()) {
             if (player.temMunicao()) {
-                player.gastarBala(1);
+                player.gastarBala();
                 vidaEspecial -= danoFinal;
                 if (vidaEspecial < 0) vidaEspecial = 0;
 
                 System.out.println("Você acertou o especial (-" + danoFinal + "). Vida do especial: " + vidaEspecial
                         + " | Balas: " + player.getMunicao());
             } else {
-                player.tomarDano(especial.getDano());
-                System.out.println("Sem munição! O especial te atacou (-" + especial.getDano() + "). Vida: " + player.getVida());
+                
+                // Dano do especial escala agora
+                int danoEspecial = especial.getDano() + (round / 5);
+
+                // 25% de chance de tomar +1 de dano no melee (Adicionei um risco)
+                if (rng.nextInt(100) < 25) {
+                    danoEspecial += 1;
+                    System.out.println("Atacar de perto tem seus perigos.");
+                }
+
+                // Jogador toma dano "Normal"
+                int danoTomado = player.tomarDano(danoEspecial);
+
+                // Jogador Causa o dano de Faca
+                int danoMelee = player.calcularDanoMelee();
+                vidaEspecial = Math.max(0, vidaEspecial - danoMelee);
+
+                System.out.println("Sem munição! O especial te atacou (-" + danoTomado + "). Vida: " + player.getVida());
+                System.out.println("Você deu uma Faca (-" + danoMelee + "). Vida do especial: " + vidaEspecial);
             }
 
             if (!player.estaVivo()) {

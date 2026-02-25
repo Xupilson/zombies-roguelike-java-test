@@ -1,10 +1,10 @@
 package jogo;
 
 public enum ZombieSpecial {
-    TANK("Tank", 18, 2),
-    RUNNER("Runner", 10, 3),
-    TOXICO("Tóxico", 14, 2),
-    EXPLODER("Exploder", 12, 4);
+    TANK("Tank", 20, 3),
+    RUNNER("Runner", 8, 4),
+    TOXICO("Tóxico", 10, 3),
+    EXPLODER("Exploder", 4, 8);
 
     private final String nome;
     private final int vida;
